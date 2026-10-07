@@ -1,0 +1,751 @@
+<title>Zebraloppet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+:root{--ink:#24323a;--card:#fffdf6;--line:#eadfc6;--acc:#f59e0b;--acc2:#ea7a0b;--good:#22a35a;--bad:#ef8a3c;--muted:#6b7a80;color-scheme:light}
+html,body{height:100%;margin:0;overflow:hidden;background:#79c4ee;font-family:"Baloo 2",ui-rounded,system-ui,sans-serif;color:var(--ink);
+  -webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#stage{position:fixed;transform-origin:50% 50%;background:linear-gradient(#58afe6 0%,#9fd8f4 38%,#d4effa 62%,#d4effa 100%);overflow:hidden;will-change:transform}
+#stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sun{position:absolute;width:12%;aspect-ratio:1;right:24%;top:20%;border-radius:50%;background:radial-gradient(circle,#fff8d0 0 45%,rgba(255,240,170,.55) 46% 62%,rgba(255,240,170,0) 63%)}
+.hud{position:fixed;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));right:calc(12px + env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px;pointer-events:none}
+.pill{background:rgba(255,253,246,.94);border-radius:999px;padding:4px 14px 4px 8px;font-weight:800;font-size:22px;display:flex;align-items:center;gap:6px;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.pill svg{width:30px;height:30px}
+.prog{display:flex;gap:6px;background:rgba(255,253,246,.94);border-radius:999px;padding:8px 12px;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.prog i{width:14px;height:14px;border-radius:50%;background:#e4dccb;display:block}
+.prog i.ok{background:var(--good)} .prog i.no{background:var(--bad)} .prog i.now{box-shadow:0 0 0 3px #f8c64a}
+.sp{flex:1}
+.ib{pointer-events:auto;width:52px;height:52px;border:0;border-radius:50%;background:rgba(255,253,246,.94);box-shadow:0 3px 0 rgba(0,0,0,.12);font:800 20px "Baloo 2",system-ui;color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.wheel{display:flex;align-items:center;gap:6px;background:rgba(255,253,246,.94);border-radius:999px;padding:4px 10px 4px 4px;box-shadow:0 3px 0 rgba(0,0,0,.12);font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.wheel svg{width:38px;height:38px;transition:none}
+.toast{position:fixed;z-index:6;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:rgba(36,50,58,.88);color:#fff;font-weight:700;font-size:18px;padding:10px 18px;border-radius:16px;max-width:min(560px,86vw);text-align:center;pointer-events:none}
+.panel{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:16px;background:rgba(30,60,80,.18);overflow:auto}
+.card{background:var(--card);border-radius:28px;box-shadow:0 10px 0 rgba(0,0,0,.12),0 20px 50px rgba(0,0,0,.18);padding:22px 26px;width:min(560px,100%);display:flex;flex-direction:column;gap:10px;box-sizing:border-box}
+.card h1{margin:0;font-size:40px;line-height:1;color:#2b3a42;text-wrap:balance}
+.card h2{margin:0;font-size:34px;line-height:1.05}
+.sub{margin:0;color:var(--muted);font-weight:600}
+.lbl{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{flex:1 1 auto;min-height:48px;border:2px solid var(--line);background:#fff;border-radius:16px;font:700 17px "Baloo 2",system-ui;color:var(--ink);padding:6px 12px;cursor:pointer}
+.seg button.on{border-color:var(--acc);background:#fff4dc;box-shadow:inset 0 0 0 1px var(--acc)}
+.go{margin-top:6px;min-height:64px;border:0;border-radius:22px;background:var(--acc);box-shadow:0 6px 0 var(--acc2);color:#fff;font:800 28px "Baloo 2",system-ui;cursor:pointer}
+.go:active{transform:translateY(3px);box-shadow:0 3px 0 var(--acc2)}
+.btn2{min-height:52px;border:2px solid var(--line);border-radius:18px;background:#fff;font:700 18px "Baloo 2",system-ui;color:var(--ink);cursor:pointer}
+.hint{margin:0;font-size:14px;color:var(--muted);line-height:1.35}
+.hint b{color:var(--ink)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row label{display:flex;align-items:center;gap:8px;font-weight:700}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--acc)}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
+.stars{display:flex;gap:6px;justify-content:center}
+.stars svg{width:54px;height:54px}
+.res{display:flex;gap:14px;justify-content:center;font-weight:800;font-size:22px}
+.res span{background:#fff4dc;border-radius:14px;padding:4px 14px}
+.rot{position:fixed;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(36,50,58,.9);color:#fff;font-weight:800;font-size:20px;padding:16px 22px;border-radius:20px;text-align:center;pointer-events:none}
+@media (max-height:460px){.card{padding:14px 18px;gap:6px}.card h1{font-size:30px}.go{min-height:52px;font-size:24px}.seg button{min-height:40px;font-size:15px}.ib{width:44px;height:44px}.pill{font-size:18px}}
+</style>
+
+<div id="stage"><div class="sun"></div><canvas id="gl"></canvas></div>
+
+<div class="hud" id="hud" hidden>
+  <div class="pill"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 12c2 14 14 22 26 18-9-1-17-8-20-20z" fill="#ffd23f" stroke="#c99a1a" stroke-width="2" stroke-linejoin="round"/><path d="M8 12l-1-4 4 1z" fill="#6b4a1a"/></svg><b id="nb">0</b></div>
+  <div class="prog" id="prog"></div>
+  <span class="sp"></span>
+  <div class="wheel" id="wheel" hidden><svg viewBox="0 0 40 40" id="wsvg" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="#2b3a42" stroke-width="4"/><circle cx="20" cy="20" r="4" fill="#2b3a42"/><path d="M5 20h11M24 20h11M20 24v12" stroke="#2b3a42" stroke-width="4"/><circle cx="20" cy="4.5" r="2.6" fill="#ef4444"/></svg><span id="deg"></span></div>
+  <button class="ib" id="pause" aria-label="Paus och inställningar">II</button>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div class="rot" id="rot" hidden>Håll plattan på bredden,<br>som en ratt</div>
+
+<div class="panel" id="menu">
+  <div class="card">
+    <h1>Zebraloppet</h1>
+    <p class="sub">Prototyp – spring igenom rätt port!</p>
+    <div class="lbl">Styrning</div>
+    <div class="seg" id="ctrlSeg"><button data-v="swipe">Svep eller tryck</button><button data-v="tilt">Luta som en ratt</button></div>
+    <div class="lbl">Apans skyltar</div>
+    <div class="seg" id="contSeg"><button data-v="shape">Former</button><button data-v="number">Siffror</button><button data-v="letter">Bokstäver</button><button data-v="math">Plus</button><button data-v="mix">Blandat</button></div>
+    <div class="lbl">Tempo</div>
+    <div class="seg" id="tempoSeg"><button data-v="0">Lugnt</button><button data-v="1">Lagom</button><button data-v="2">Snabbt</button></div>
+    <button class="go" id="go">Spring!</button>
+    <p class="hint" id="hint"></p>
+  </div>
+</div>
+
+<div class="panel" id="settings" hidden>
+  <div class="card">
+    <h2>Paus</h2>
+    <button class="go" id="resume">Fortsätt</button>
+    <div class="lbl">Lutning</div>
+    <div class="seg" id="tiltSeg"><button data-v="wheel">Ratt: luta för att svänga</button><button data-v="direct">Direkt: lutningen är platsen</button></div>
+    <div class="row"><label for="comp">Bilden hålls rak</label><input type="range" id="comp" min="0" max="100" step="5"><b id="compv"></b></div>
+    <div class="row"><label><input type="checkbox" id="inv"> Vänd lutningen</label><label><input type="checkbox" id="voice"> Röst</label></div>
+    <button class="btn2" id="quit">Till startsidan</button>
+  </div>
+</div>
+
+<div class="panel" id="end" hidden>
+  <div class="card">
+    <h2 id="endT">I mål!</h2>
+    <div class="stars" id="stars"></div>
+    <div class="res"><span id="endR"></span><span id="endB"></span></div>
+    <button class="go" id="again">Spring igen</button>
+    <button class="btn2" id="tomenu">Startsidan</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const TAU = Math.PI * 2, clamp = (v, a, b) => v < a ? a : v > b ? b : v, rnd = (a, b) => a + Math.random() * (b - a);
+const S = { ctrl: 'swipe', tiltMode: 'wheel', tempo: 1, content: 'mix', comp: 90, invert: false, voice: true };
+try { Object.assign(S, JSON.parse(localStorage.getItem('zebraloppet.v1') || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem('zebraloppet.v1', JSON.stringify(S)); } catch (e) {} };
+
+/* ================= WebGL-motor (liten, egen) ================= */
+const cv = $('#gl'), stage = $('#stage');
+const gl = cv.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: false }) || cv.getContext('experimental-webgl');
+if (!gl) { $('#menu').innerHTML = '<div class="card"><h1>Zebraloppet</h1><p class="sub">Den här enheten kan tyvärr inte visa 3D-grafik (WebGL).</p></div>'; return; }
+
+const VS = `precision mediump float;
+attribute vec3 aP; attribute vec3 aN; attribute vec3 aC; attribute vec2 aU;
+uniform mat4 uM; uniform mat4 uV; uniform mat4 uPr;
+uniform float uBend; uniform float uBendX; uniform float uCurve; uniform float uFogN; uniform float uFogF;
+uniform vec3 uTint; uniform vec2 uUVo;
+varying vec3 vC; varying vec2 vU; varying float vF; varying float vL;
+void main(){
+  vec4 v = uV * (uM * vec4(aP, 1.0));
+  float dz = min(0.0, v.z + 5.0);
+  v.y -= uBend * dz * dz + uBendX * v.x * v.x;
+  v.x += uCurve * dz * dz;
+  gl_Position = uPr * v;
+  vec3 n = normalize(mat3(uM[0].xyz, uM[1].xyz, uM[2].xyz) * aN);
+  vL = 0.60 + 0.20 * n.y + 0.40 * max(dot(n, normalize(vec3(-0.45, 0.85, 0.55))), 0.0);
+  vC = aC * uTint; vU = aU + uUVo;
+  vF = clamp((-v.z - uFogN) / (uFogF - uFogN), 0.0, 1.0);
+}`;
+const FS = `precision mediump float;
+varying vec3 vC; varying vec2 vU; varying float vF; varying float vL;
+uniform sampler2D uT; uniform float uUseT; uniform float uUnlit; uniform float uA; uniform vec3 uFogC;
+void main(){
+  vec4 c = vec4(vC, 1.0);
+  if (uUseT > 0.5) c *= texture2D(uT, vU);
+  if (c.a < 0.03) discard;
+  float L = uUnlit > 0.5 ? 1.0 : vL;
+  gl_FragColor = vec4(mix(c.rgb * L, uFogC, vF), c.a * uA);
+}`;
+function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const A = {}, L = {};
+['aP', 'aN', 'aC', 'aU'].forEach(n => { A[n] = gl.getAttribLocation(prog, n); gl.enableVertexAttribArray(A[n]); });
+['uM', 'uV', 'uPr', 'uBend', 'uBendX', 'uCurve', 'uFogN', 'uFogF', 'uTint', 'uUVo', 'uT', 'uUseT', 'uUnlit', 'uA', 'uFogC'].forEach(n => L[n] = gl.getUniformLocation(prog, n));
+gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+gl.uniform1i(L.uT, 0);
+gl.uniform3f(L.uFogC, 0.83, 0.94, 0.98);
+gl.uniform1f(L.uFogN, 34); gl.uniform1f(L.uFogF, 80);
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+/* matematik (kolumnvisa 4x4) */
+function mul(a, b) { const o = new Float32Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; }
+function trs(p, r, s) {
+  const cx = Math.cos(r[0]), sx = Math.sin(r[0]), cy = Math.cos(r[1]), sy = Math.sin(r[1]), cz = Math.cos(r[2]), sz = Math.sin(r[2]);
+  const m = new Float32Array(16);
+  m[0] = (cy * cz + sy * sx * sz) * s[0]; m[1] = cx * sz * s[0]; m[2] = (-sy * cz + cy * sx * sz) * s[0];
+  m[4] = (-cy * sz + sy * sx * cz) * s[1]; m[5] = cx * cz * s[1]; m[6] = (sy * sz + cy * sx * cz) * s[1];
+  m[8] = sy * cx * s[2]; m[9] = -sx * s[2]; m[10] = cy * cx * s[2];
+  m[12] = p[0]; m[13] = p[1]; m[14] = p[2]; m[15] = 1; return m;
+}
+function persp(f, a, n, fa) { const t = 1 / Math.tan(f / 2), r = new Float32Array(16); r[0] = t / a; r[5] = t; r[10] = (fa + n) / (n - fa); r[11] = -1; r[14] = 2 * fa * n / (n - fa); return r; }
+function lookAt(e, c) {
+  let zx = e[0] - c[0], zy = e[1] - c[1], zz = e[2] - c[2], l = Math.hypot(zx, zy, zz); zx /= l; zy /= l; zz /= l;
+  let xx = zz, xy = 0, xz = -zx; l = Math.hypot(xx, xy, xz); xx /= l; xz /= l;           // up = (0,1,0)
+  const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+  return new Float32Array([xx, yx, zx, 0, xy, yy, zy, 0, xz, yz, zz, 0, -(xx * e[0] + xy * e[1] + xz * e[2]), -(yx * e[0] + yy * e[1] + yz * e[2]), -(zx * e[0] + zy * e[1] + zz * e[2]), 1]);
+}
+const I4 = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+const hex = h => [(h >> 16 & 255) / 255, (h >> 8 & 255) / 255, (h & 255) / 255];
+
+/* geometribyggare: platta, facetterade former med färg per hörn */
+class MB {
+  constructor() { this.a = []; this.m = null; }
+  at(p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1]) { this.m = trs(p, r, s); return this; }
+  tp(v) { const m = this.m; if (!m) return v; return [m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12], m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13], m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14]]; }
+  tri(p0, p1, p2, c, ref, u0 = [0, 0], u1 = [0, 0], u2 = [0, 0]) {
+    p0 = this.tp(p0); p1 = this.tp(p1); p2 = this.tp(p2); ref = this.tp(ref);
+    const ax = p1[0] - p0[0], ay = p1[1] - p0[1], az = p1[2] - p0[2], bx = p2[0] - p0[0], by = p2[1] - p0[1], bz = p2[2] - p0[2];
+    let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx; const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    const qx = (p0[0] + p1[0] + p2[0]) / 3 - ref[0], qy = (p0[1] + p1[1] + p2[1]) / 3 - ref[1], qz = (p0[2] + p1[2] + p2[2]) / 3 - ref[2];
+    if (nx * qx + ny * qy + nz * qz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    for (const [p, u] of [[p0, u0], [p1, u1], [p2, u2]]) this.a.push(p[0], p[1], p[2], nx, ny, nz, c[0], c[1], c[2], u[0], u[1]);
+  }
+  quad(a, b, c, d, col, ref, uv) { uv = uv || [[0, 0], [1, 0], [1, 1], [0, 1]]; this.tri(a, b, c, col, ref, uv[0], uv[1], uv[2]); this.tri(a, c, d, col, ref, uv[0], uv[2], uv[3]); }
+  box(w, h, d, col) {
+    const x = w / 2, y = h / 2, z = d / 2, P = [[-x, -y, -z], [x, -y, -z], [x, y, -z], [-x, y, -z], [-x, -y, z], [x, -y, z], [x, y, z], [-x, y, z]];
+    [[0, 1, 2, 3], [5, 4, 7, 6], [4, 0, 3, 7], [1, 5, 6, 2], [3, 2, 6, 7], [4, 5, 1, 0]].forEach(f => this.quad(P[f[0]], P[f[1]], P[f[2]], P[f[3]], col, [0, 0, 0])); return this;
+  }
+  cyl(rt, rb, h, seg, col, cap) {
+    const y = h / 2, cc = cap || col;
+    for (let i = 0; i < seg; i++) {
+      const a0 = i / seg * TAU, a1 = (i + 1) / seg * TAU;
+      const t0 = [Math.cos(a0) * rt, y, Math.sin(a0) * rt], t1 = [Math.cos(a1) * rt, y, Math.sin(a1) * rt], b0 = [Math.cos(a0) * rb, -y, Math.sin(a0) * rb], b1 = [Math.cos(a1) * rb, -y, Math.sin(a1) * rb];
+      if (rt === 0) this.tri(b0, b1, t0, col, [0, 0, 0]); else this.quad(b0, b1, t1, t0, col, [0, 0, 0]);
+      if (rt > 0) this.tri([0, y, 0], t0, t1, cc, [0, -1e3, 0]);
+      if (rb > 0) this.tri([0, -y, 0], b1, b0, cc, [0, 1e3, 0]);
+    }
+    return this;
+  }
+  sph(r, sw, shh, col) {
+    const P = (v, a) => [Math.sin(v) * Math.cos(a) * r, Math.cos(v) * r, Math.sin(v) * Math.sin(a) * r];
+    for (let j = 0; j < shh; j++) for (let i = 0; i < sw; i++) {
+      const v0 = j / shh * Math.PI, v1 = (j + 1) / shh * Math.PI, a0 = i / sw * TAU, a1 = (i + 1) / sw * TAU;
+      const p00 = P(v0, a0), p01 = P(v0, a1), p10 = P(v1, a0), p11 = P(v1, a1);
+      if (j === 0) this.tri(p00, p10, p11, col, [0, 0, 0]); else if (j === shh - 1) this.tri(p00, p10, p01, col, [0, 0, 0]); else this.quad(p00, p10, p11, p01, col, [0, 0, 0]);
+    }
+    return this;
+  }
+  torus(R, r, arc, sa, sb, col, tip) {
+    for (let i = 0; i < sa; i++) {
+      const a0 = i / sa * arc, a1 = (i + 1) / sa * arc, c = (tip && (i === 0 || i === sa - 1)) ? tip : col;
+      const ctr = [Math.cos((a0 + a1) / 2) * R, Math.sin((a0 + a1) / 2) * R, 0];
+      for (let j = 0; j < sb; j++) {
+        const b0 = j / sb * TAU, b1 = (j + 1) / sb * TAU;
+        const P = (a, b) => [Math.cos(a) * (R + r * Math.cos(b)), Math.sin(a) * (R + r * Math.cos(b)), r * Math.sin(b)];
+        this.quad(P(a0, b0), P(a1, b0), P(a1, b1), P(a0, b1), c, ctr);
+      }
+    }
+    return this;
+  }
+  plane(w, h, col) { const x = w / 2, y = h / 2; this.quad([-x, -y, 0], [x, -y, 0], [x, y, 0], [-x, y, 0], col || [1, 1, 1], [0, 0, -1]); return this; }
+  build() { const f = new Float32Array(this.a), b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, f, gl.STATIC_DRAW); return { b, n: f.length / 11 }; }
+}
+const mb = () => new MB();
+function node(mesh, o) { return Object.assign({ mesh, p: [0, 0, 0], r: [0, 0, 0], s: [1, 1, 1], kids: [], vis: true, tint: [1, 1, 1], tex: null, blend: false, unlit: false, alpha: 1, uvo: null, nodepth: false }, o || {}); }
+function add(parent, child) { parent.kids.push(child); return child; }
+
+/* texturer */
+function texFrom(canvas, repeat) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  const w = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, w); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, w);
+  const ext = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+  if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+  return t;
+}
+function canvasTex(w, h, draw, repeat) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return texFrom(c, repeat); }
+const WHITE = canvasTex(4, 4, (g) => { g.fillStyle = '#fff'; g.fillRect(0, 0, 4, 4); });
+const GRASS = canvasTex(64, 64, (g, w, h) => {
+  g.fillStyle = '#93c653'; g.fillRect(0, 0, w, h); g.fillStyle = '#86bb48'; g.fillRect(0, 0, w, h / 2);
+  for (let i = 0; i < 90; i++) { g.fillStyle = ['#a3d260', '#7aad3d', '#9ccc5a'][i % 3]; g.fillRect(Math.random() * w, Math.random() * h, 2, 3); }
+}, true);
+const SAND = canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = '#e9cd92'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 160; i++) { g.fillStyle = ['#dcbd7f', '#f2dca9', '#d6b273'][i % 3]; g.beginPath(); g.arc(Math.random() * w, Math.random() * h, Math.random() * 1.8 + .6, 0, TAU); g.fill(); }
+  g.fillStyle = '#f7e6bf'; for (const x of [w / 3, 2 * w / 3]) g.fillRect(x - 2, 8, 4, h / 2 - 16);
+  g.fillStyle = '#c99f5d'; g.fillRect(0, 0, 5, h); g.fillRect(w - 5, 0, 5, h);
+  g.fillStyle = '#78a83c'; g.fillRect(0, 0, 2, h); g.fillRect(w - 2, 0, 2, h);
+}, true);
+const SHADOW = canvasTex(64, 64, (g, w) => { const r = g.createRadialGradient(32, 32, 2, 32, 32, 30); r.addColorStop(0, 'rgba(40,50,20,.45)'); r.addColorStop(1, 'rgba(40,50,20,0)'); g.fillStyle = r; g.fillRect(0, 0, w, w); });
+const FINISH = canvasTex(256, 64, (g, w, h) => {
+  g.fillStyle = '#ef4444'; g.fillRect(0, 0, w, h);
+  for (let x = 0; x < 32; x++) for (let y = 0; y < 2; y++) { g.fillStyle = (x + y) % 2 ? '#222' : '#fff'; g.fillRect(x * 8, y * 6, 8, 6); g.fillRect(x * 8, h - 12 + y * 6, 8, 6); }
+  g.fillStyle = '#fff'; g.font = '800 34px "Baloo 2", system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('MÅL', w / 2, h / 2 + 2);
+});
+
+/* skyltar */
+const SHAPES = [{ id: 'circle', n: 'cirkeln' }, { id: 'tri', n: 'triangeln' }, { id: 'square', n: 'fyrkanten' }, { id: 'star', n: 'stjärnan' }, { id: 'heart', n: 'hjärtat' }];
+const symCache = {};
+function symTex(sp) {
+  const key = sp.t + ':' + sp.v;
+  if (symCache[key]) return symCache[key];
+  return symCache[key] = canvasTex(256, 256, (g, w) => {
+    const rr = (x, y, ww, hh, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + ww, y, x + ww, y + hh, r); g.arcTo(x + ww, y + hh, x, y + hh, r); g.arcTo(x, y + hh, x, y, r); g.arcTo(x, y, x + ww, y, r); g.closePath(); };
+    rr(6, 6, w - 12, w - 12, 40); g.fillStyle = '#fffdf5'; g.fill(); g.lineWidth = 12; g.strokeStyle = '#f2b84b'; g.stroke();
+    const c = w / 2; g.fillStyle = '#7c4dff'; g.strokeStyle = '#5b2fd6'; g.lineWidth = 6; g.lineJoin = 'round';
+    if (sp.t === 'shape') {
+      g.beginPath();
+      if (sp.v === 'circle') g.arc(c, c, 74, 0, TAU);
+      else if (sp.v === 'square') g.rect(c - 68, c - 68, 136, 136);
+      else if (sp.v === 'tri') { g.moveTo(c, c - 80); g.lineTo(c + 84, c + 66); g.lineTo(c - 84, c + 66); g.closePath(); }
+      else if (sp.v === 'star') { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 36 : 86; g.lineTo(c + Math.cos(a) * r, c + 6 + Math.sin(a) * r); } g.closePath(); }
+      else if (sp.v === 'heart') { g.moveTo(c, c + 74); g.bezierCurveTo(c - 110, c, c - 70, c - 92, c, c - 40); g.bezierCurveTo(c + 70, c - 92, c + 110, c, c, c + 74); }
+      g.fill(); g.stroke();
+    } else if (sp.t === 'dots') {
+      const P = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]], 7: [[-1, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [1, 1]] }[sp.v];
+      g.fillStyle = '#e8553f'; for (const [x, y] of P) { g.beginPath(); g.arc(c + x * 58, c + y * 58, 25, 0, TAU); g.fill(); }
+    } else {
+      g.fillStyle = '#2b3a42'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `800 ${sp.t === 'text' ? 118 : 190}px "Baloo 2", system-ui, sans-serif`;
+      g.fillText(String(sp.v), c, c + (sp.t === 'text' ? 12 : 18));
+    }
+  });
+}
+
+/* ================= världen ================= */
+const C = {
+  zw: hex(0xf8f6ee), zb: hex(0x2a2a2e), wood: hex(0xb7793f), wood2: hex(0xe0a356), leaf: hex(0x4f9a3a), leaf2: hex(0x6db246), trunk: hex(0x8a5a32),
+  rock: hex(0xa7a39a), mon: hex(0x8b5a2b), monL: hex(0xe9c79d), vine: hex(0x4c8a2c), ban: hex(0xffd23f), banT: hex(0x6b4a1a), log: hex(0x9a6234), logE: hex(0xe6c48b), mound: hex(0xc58a52)
+};
+const LANE = 2.0, WORLD_L = 242, ZFAR = -230;
+function grid(w, l, nx, nz, us, vs, y, col) {
+  const b = mb();
+  for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+    const x0 = -w / 2 + i * w / nx, x1 = x0 + w / nx, z0 = 12 - j * l / nz, z1 = z0 - l / nz;
+    b.quad([x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1], col, [0, y - 1, 0], [[x0 / us, -z0 / vs], [x1 / us, -z0 / vs], [x1 / us, -z1 / vs], [x0 / us, -z1 / vs]]);
+  }
+  return b.build();
+}
+const ground = node(grid(96, WORLD_L, 16, 120, 6, 6, 0, [1, 1, 1]), { tex: GRASS, uvo: [0, 0] });
+const path = node(grid(6.6, WORLD_L, 1, 120, 6.6, 6, 0.02, [1, 1, 1]), { tex: SAND, uvo: [0, 0] });
+// stigens uv börjar vid x=-3.3 => förskjut u
+path.uvo = [0.5, 0];
+
+/* zebran */
+function stripes(b, w, h, len, axis, a, bw) { // randigt block, ränder längs axis ('z' eller 'y')
+  let pos = -len / 2, i = 0;
+  while (pos < len / 2 - 1e-6) {
+    const seg = Math.min(i % 2 ? bw : a, len / 2 - pos), col = i % 2 ? C.zb : C.zw;
+    if (axis === 'z') b.at([0, 0, pos + seg / 2]).box(w, h, seg, col); else b.at([0, pos + seg / 2, 0]).box(w, seg, h, col);
+    pos += seg; i++;
+  }
+}
+function stripedPart(w, h, len, axis, a, bw, p, r) {
+  const b = mb(); stripes(b, w, h, len, axis, a, bw);
+  const n = node(b.build()); if (p) n.p = p; if (r) n.r = r; return n;
+}
+const zebra = node(null);
+const torso = add(zebra, node(null));
+add(torso, stripedPart(0.98, 0.84, 1.9, 'z', 0.2, 0.11, [0, 1.3, 0]));
+(() => { // bakdel med ränder sett bakifrån
+  const b = mb();
+  for (let k = 0; k < 3; k++) b.at([0, 1.05 + k * 0.24, 0.955]).box(0.9 - k * 0.08, 0.07, 0.02, C.zb);
+  add(torso, node(b.build()));
+})();
+add(torso, stripedPart(0.42, 0.5, 0.95, 'y', 0.16, 0.09, [0, 1.85, -0.86], [-0.55, 0, 0]));
+(() => {
+  const b = mb();
+  b.at([0, 2.28, -1.32], [-0.2, 0, 0]).box(0.48, 0.5, 0.86, C.zw);
+  b.at([0, 2.14, -1.78], [-0.2, 0, 0]).box(0.4, 0.34, 0.24, C.zb);
+  b.at([0, 2.38, -1.32], [-0.2, 0, 0]).box(0.5, 0.08, 0.5, C.zb);
+  b.at([-0.17, 2.66, -1.12], [0.2, 0, -0.25]).cyl(0, 0.1, 0.34, 4, C.zw);
+  b.at([0.17, 2.66, -1.12], [0.2, 0, 0.25]).cyl(0, 0.1, 0.34, 4, C.zw);
+  b.at([0, 2.12, -0.78], [-0.55, 0, 0]).box(0.12, 0.62, 0.7, C.zb); // man
+  add(torso, node(b.build()));
+})();
+const tail = add(torso, node((() => { const b = mb(); b.at([0, -0.3, 0]).box(0.08, 0.6, 0.08, C.zw); b.at([0, -0.66, 0]).box(0.16, 0.22, 0.16, C.zb); return b.build(); })(), { p: [0, 1.6, 0.96], r: [0.35, 0, 0] }));
+const legMesh = (() => { const b = mb(); stripes(b, 0.2, 0.2, 0.86, 'y', 0.13, 0.08); b.m = null; return b; })();
+// flytta benet så att höften är i origo
+const legs = [[-0.31, -0.68, 0], [0.31, -0.68, 1], [-0.31, 0.7, 1], [0.31, 0.7, 0]].map(([x, z, ph]) => {
+  const b = mb(); b.a = legMesh.a.map((v, i) => (i % 11 === 1 ? v - 0.43 : v)); b.at([0, -0.9, 0]).box(0.23, 0.1, 0.25, C.zb);
+  const n = add(torso, node(b.build(), { p: [x, 0.93, z] })); n.ph = ph * Math.PI + (z > 0 ? 0.5 : 0); return n;
+});
+const zshadow = node(mb().plane(1.8, 2.6).build(), { tex: SHADOW, blend: true, unlit: true, nodepth: true, r: [-Math.PI / 2, 0, 0], p: [0, 0.04, 0] });
+
+/* apan med skylten (hänger framför kameran) */
+const monkey = node(null, { cam: true });
+const mBody = add(monkey, node((() => {
+  const b = mb();
+  b.at([0, 7.2, 0]).cyl(0.05, 0.05, 14, 5, C.vine);
+  b.at([0, 0, 0], [0, 0, 0], [1, 1.15, 0.9]).sph(0.42, 8, 6, C.mon);
+  b.at([0, -0.05, 0.22], [0, 0, 0], [0.75, 0.9, 0.5]).sph(0.32, 8, 6, C.monL);
+  b.at([-0.38, -0.34, 0.15], [0.9, 0, 0.5]).cyl(0.08, 0.1, 0.55, 5, C.mon);
+  b.at([0.38, -0.34, 0.15], [0.9, 0, -0.5]).cyl(0.08, 0.1, 0.55, 5, C.mon);
+  b.at([-0.2, -0.6, 0.05], [0, 0, 0.3]).cyl(0.09, 0.1, 0.5, 5, C.mon);
+  b.at([0.2, -0.6, 0.05], [0, 0, -0.3]).cyl(0.09, 0.1, 0.5, 5, C.mon);
+  return b.build();
+})()));
+const mHead = add(monkey, node((() => {
+  const b = mb();
+  b.at([0, 0, 0]).sph(0.4, 9, 7, C.mon);
+  b.at([0, -0.06, 0.24], [0, 0, 0], [1, 0.85, 0.6]).sph(0.3, 9, 6, C.monL);
+  b.at([-0.42, 0.04, 0]).sph(0.15, 6, 5, C.monL); b.at([0.42, 0.04, 0]).sph(0.15, 6, 5, C.monL);
+  b.at([-0.12, 0.06, 0.4]).sph(0.06, 5, 4, C.zb); b.at([0.12, 0.06, 0.4]).sph(0.06, 5, 4, C.zb);
+  b.at([0, -0.16, 0.42], [0, 0, 0], [1, 0.4, 0.4]).sph(0.1, 6, 4, hex(0x6b3a1a));
+  return b.build();
+})(), { p: [0, 0.68, 0] }));
+const mSign = add(monkey, node(mb().at([0, 0, -0.05]).box(1.72, 1.72, 0.08, C.wood).build(), { p: [0, -0.95, 0.38] }));
+const mPlate = add(mSign, node(mb().plane(1.6, 1.6).build(), { p: [0, 0, 0.05], tex: null, blend: true, unlit: true }));
+const MON = { y: 20, ty: 20, show: 2, hide: 9, mood: 0, mt: 0 };
+
+/* dekor: akacior, buskar, stenar, gräs, termitstackar */
+function decorMesh(kind) {
+  const b = mb();
+  if (kind === 0) { const h = rnd(2.4, 3.6); b.at([0, h / 2, 0]).cyl(0.12, 0.22, h, 5, C.trunk); b.at([0.5, h * 0.8, 0], [0, 0, -0.7]).cyl(0.06, 0.1, 1.2, 4, C.trunk); b.at([0, h + 0.15, 0], [0, 0, 0], [1, 1, 0.8]).cyl(2.1, 2.4, 0.55, 7, C.leaf, C.leaf2); b.at([0.6, h + 0.45, 0.3]).cyl(1.0, 1.2, 0.35, 6, C.leaf2); }
+  else if (kind === 1) { b.at([0, 0.45, 0], [0, 0, 0], [1.3, 0.8, 1.1]).sph(0.75, 6, 4, C.leaf); b.at([0.6, 0.35, 0.2]).sph(0.45, 5, 4, C.leaf2); }
+  else if (kind === 2) { b.at([0, 0.25, 0], [0.3, 0.6, 0.2], [1.3, 0.7, 1]).sph(0.55, 5, 3, C.rock); }
+  else if (kind === 3) { for (let i = 0; i < 4; i++) b.at([rnd(-.3, .3), 0.3, rnd(-.3, .3)], [rnd(-.3, .3), 0, rnd(-.3, .3)]).cyl(0, 0.08, 0.7, 3, C.leaf2); }
+  else { b.at([0, 0.7, 0]).cyl(0.15, 0.6, 1.4, 6, C.mound); b.at([0.35, 0.4, 0]).cyl(0.08, 0.3, 0.8, 5, C.mound); }
+  return b.build();
+}
+const DECOR_MESH = [0, 0, 1, 1, 2, 3, 3, 4].map(k => [k, decorMesh(k)]);
+const decor = [];
+function placeDecor(d, z) {
+  const side = Math.random() < 0.5 ? -1 : 1, near = d.kind === 3 || d.kind === 2;
+  d.p = [side * (near ? rnd(3.9, 9) : rnd(5, 28)), 0, z]; d.r = [0, rnd(0, TAU), 0]; const s = rnd(0.8, 1.25); d.s = [s, s, s];
+}
+for (let i = 0; i < 90; i++) { const [k, m] = DECOR_MESH[i % DECOR_MESH.length]; const d = node(m); d.kind = k; placeDecor(d, rnd(ZFAR, 12)); decor.push(d); }
+
+/* spel-objekt */
+const BANANA = mb().torus(0.32, 0.085, 2.2, 7, 5, C.ban, C.banT).build();
+const LOG = mb().at([0, 0.34, 0], [0, 0, Math.PI / 2]).cyl(0.34, 0.34, 1.75, 8, C.log, C.logE).build();
+const GATE = (() => { const b = mb(); b.at([-0.92, 1.55, 0]).box(0.2, 3.1, 0.2, C.wood); b.at([0.92, 1.55, 0]).box(0.2, 3.1, 0.2, C.wood); b.at([0, 3.08, 0]).box(2.1, 0.24, 0.26, C.wood2); b.at([-0.92, 3.3, 0]).sph(0.26, 6, 4, C.leaf2); b.at([0.92, 3.3, 0]).sph(0.26, 6, 4, C.leaf2); b.at([0, 3.18, -0.12]).box(0.08, 0.6, 0.08, C.wood); return b.build(); })();
+const PLATE = mb().plane(1.55, 1.55).build();
+const PLATE_BACK = mb().at([0, 0, -0.03]).box(1.68, 1.68, 0.06, C.wood2).build();
+const ARCH = (() => { const b = mb(); b.at([-3.7, 2.1, 0]).box(0.32, 4.2, 0.32, hex(0xffffff)); b.at([3.7, 2.1, 0]).box(0.32, 4.2, 0.32, hex(0xffffff)); return b.build(); })();
+const BANNER = mb().plane(7.6, 1.9).build();
+const ents = [];
+
+/* konfetti */
+const CONF_COL = [0xef4444, 0xf59e0b, 0x22c55e, 0x3b82f6, 0xa855f7, 0xffd23f].map(hex);
+const confetti = Array.from({ length: 48 }, (_, i) => { const n = node(mb().box(0.16, 0.16, 0.04, CONF_COL[i % 6]).build(), { vis: false, unlit: true }); n.v = [0, 0, 0]; n.life = 0; return n; });
+function burst(x, y, z, n) {
+  let c = 0;
+  for (const p of confetti) { if (p.life > 0) continue; p.vis = true; p.life = rnd(0.8, 1.3); p.p = [x + rnd(-.4, .4), y, z + rnd(-.4, .4)]; p.v = [rnd(-4, 4), rnd(4, 9), rnd(-3, 2)]; p.r = [rnd(0, 6), rnd(0, 6), 0]; if (++c >= n) break; }
+}
+
+/* ================= kamera och rendering ================= */
+let W = 1, H = 1, SW = 1, SH = 1, VF = 0.9, PORTRAIT = false, proj = I4;
+function layout() {
+  W = innerWidth; H = innerHeight; PORTRAIT = H > W;
+  const tilt = S.ctrl === 'tilt' && G.state !== 'menu';
+  SW = tilt ? Math.ceil(Math.hypot(W, H)) : W; SH = tilt ? SW : H;
+  Object.assign(stage.style, { width: SW + 'px', height: SH + 'px', left: (W - SW) / 2 + 'px', top: (H - SH) / 2 + 'px' });
+  if (!tilt) stage.style.transform = '';
+  const pr = Math.min(window.devicePixelRatio || 1, Math.sqrt(2.6e6 / (SW * SH)));
+  cv.width = Math.round(SW * pr); cv.height = Math.round(SH * pr);
+  gl.viewport(0, 0, cv.width, cv.height);
+  VF = (PORTRAIT ? 66 : 52) * Math.PI / 180;
+  const fov = 2 * Math.atan(Math.tan(VF / 2) * SH / H);
+  proj = persp(fov, SW / SH, 0.1, 260);
+  MON.show = 10 * Math.tan(VF / 2) - 1.3; MON.hide = MON.show + 8;
+  if (MON.ty > MON.show + 1) MON.ty = MON.hide;
+  $('#rot').hidden = !(tilt && PORTRAIT);
+}
+function collect(n, parent, out) {
+  if (!n.vis) return;
+  const w = mul(parent, trs(n.p, n.r, n.s));
+  if (n.mesh) out.push([n, w]);
+  for (const k of n.kids) collect(k, w, out);
+}
+function drawItem(n, w, view) {
+  gl.uniformMatrix4fv(L.uM, false, w); gl.uniformMatrix4fv(L.uV, false, view);
+  gl.uniform3fv(L.uTint, n.tint); gl.uniform1f(L.uA, n.alpha); gl.uniform1f(L.uUnlit, n.unlit ? 1 : 0);
+  gl.uniform2fv(L.uUVo, n.uvo || [0, 0]);
+  gl.uniform1f(L.uUseT, n.tex ? 1 : 0); gl.bindTexture(gl.TEXTURE_2D, n.tex || WHITE);
+  gl.bindBuffer(gl.ARRAY_BUFFER, n.mesh.b);
+  gl.vertexAttribPointer(A.aP, 3, gl.FLOAT, false, 44, 0); gl.vertexAttribPointer(A.aN, 3, gl.FLOAT, false, 44, 12);
+  gl.vertexAttribPointer(A.aC, 3, gl.FLOAT, false, 44, 24); gl.vertexAttribPointer(A.aU, 2, gl.FLOAT, false, 44, 36);
+  gl.drawArrays(gl.TRIANGLES, 0, n.mesh.n);
+}
+function render(view) {
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.uniformMatrix4fv(L.uPr, false, proj);
+  const world = [], cam = [];
+  for (const r of [ground, path, ...decor, ...ents.map(e => e.node), zebra, ...confetti]) collect(r, I4, world);
+  collect(zshadow, I4, world);
+  collect(monkey, I4, cam);
+  const late = [];
+  gl.uniform1f(L.uBend, U.bend); gl.uniform1f(L.uBendX, U.bendX); gl.uniform1f(L.uCurve, U.curve);
+  for (const [n, w] of world) { if (n.blend) late.push([n, w, view]); else drawItem(n, w, view); }
+  for (const [n, w] of cam) { if (n.blend) late.push([n, w, I4]); else drawItem(n, w, I4); }
+  for (const it of late) { const v = it[2], w = it[1]; it[3] = v[2] * w[12] + v[6] * w[13] + v[10] * w[14] + v[14]; }
+  late.sort((a, b) => a[3] - b[3]);
+  gl.enable(gl.BLEND);
+  for (const [n, w, v] of late) { gl.depthMask(!n.nodepth); drawItem(n, w, v); }
+  gl.depthMask(true); gl.disable(gl.BLEND);
+}
+const U = { bend: 0.0026, bendX: 0.0016, curve: 0 };
+
+/* ================= ljud och röst ================= */
+let AC = null;
+function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
+function tone(f, t0, dur, type, vol, f2) {
+  const a = ac(); if (!a) return; const t = a.currentTime + t0, o = a.createOscillator(), g = a.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+}
+const sfx = {
+  pick: () => { tone(988, 0, 0.09, 'triangle', 0.1); tone(1480, 0.06, 0.12, 'triangle', 0.08); },
+  good: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.25, 'triangle', 0.14)),
+  bad: () => { tone(330, 0, 0.18, 'square', 0.05, 250); tone(250, 0.16, 0.28, 'square', 0.05, 180); },
+  jump: () => tone(320, 0, 0.22, 'sine', 0.12, 720),
+  bonk: () => { tone(150, 0, 0.25, 'triangle', 0.22, 70); },
+  sign: () => { tone(660, 0, 0.12, 'sine', 0.1); tone(880, 0.1, 0.16, 'sine', 0.1); },
+  fanfare: () => [523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.12, i === 5 ? 0.6 : 0.2, 'triangle', 0.15))
+};
+let svVoice = null;
+function pickVoice() { try { const v = speechSynthesis.getVoices(); svVoice = v.find(x => /^sv/i.test(x.lang)) || null; } catch (e) {} }
+if (window.speechSynthesis) { pickVoice(); try { speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
+function say(t) {
+  if (!S.voice || !window.speechSynthesis) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'sv-SE'; if (svVoice) u.voice = svVoice; u.rate = 0.95; u.pitch = 1.3; speechSynthesis.speak(u); } catch (e) {}
+}
+
+/* ================= lutning (gravitationssensorn) ================= */
+const T = { got: false, raw: 0, ang: 0, inv: 0, listening: false };
+function screenAngle() { const o = screen.orientation; const a = (o && typeof o.angle === 'number') ? o.angle : (window.orientation || 0); return a * Math.PI / 180; }
+function onMotion(e) {
+  const g = e.accelerationIncludingGravity; if (!g || g.x == null || g.y == null) return;
+  const a = screenAngle(), sx = g.x * Math.cos(a) - g.y * Math.sin(a), sy = g.x * Math.sin(a) + g.y * Math.cos(a);
+  if (!T.inv) { if (Math.abs(sy) < 3) return; T.inv = sy > 0 ? 1 : -1; }  // olika webbläsare har olika tecken
+  const vx = sx * T.inv, vy = sy * T.inv;
+  if (Math.hypot(vx, vy) < 2) return;                                      // plattan ligger nästan platt
+  T.raw = Math.atan2(-vx, vy) * 180 / Math.PI;                              // medurs = positivt
+  T.got = true;
+}
+async function enableTilt() {
+  try {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      const r = await DeviceMotionEvent.requestPermission(); if (r !== 'granted') return false;
+    }
+    if (!T.listening) { window.addEventListener('devicemotion', onMotion); T.listening = true; }
+    return true;
+  } catch (e) { return false; }
+}
+window.__tilt = T;
+
+/* ================= spelet ================= */
+const G = { state: 'menu', paused: false, t: 0, dist: 0, speed: 6, boost: 0, slow: 0, zx: 0, lane: 0, jy: 0, vy: 0, phase: 0, ban: 0, right: 0, done: 0, total: 8, react: 5, mode: 'run', mt: 3, ch: null, fruitIn: 14, logIn: 40, wob: 0, results: [] };
+window.__G = G;
+const NUMW = ['noll', 'ett', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju'];
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const LETTERS = 'ASOMLIRBEKTUFP'.split('');
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function newChallenge() {
+  const kind = S.content === 'mix' ? ['shape', 'number', 'letter', 'math'][G.done % 4] : S.content;
+  const ans = Math.floor(Math.random() * 3);
+  if (kind === 'shape') { const o = shuffle(SHAPES).slice(0, 3); return { kind, ans, sign: { t: 'shape', v: o[ans].id }, gates: o.map(x => ({ t: 'shape', v: x.id })), say: `Hitta ${o[ans].n}!`, fix: `Det var ${o[ans].n}.` }; }
+  if (kind === 'number') { const o = shuffle([1, 2, 3, 4, 5, 6]).slice(0, 3), n = o[ans]; return { kind, ans, sign: { t: 'digit', v: n }, gates: o.map(x => ({ t: 'dots', v: x })), say: `${cap(NUMW[n])}! Spring till ${n === 1 ? 'en prick' : NUMW[n] + ' prickar'}.`, fix: `Där var ${n === 1 ? 'en prick' : NUMW[n] + ' prickar'}.` }; }
+  if (kind === 'letter') { const o = shuffle(LETTERS).slice(0, 3); return { kind, ans, sign: { t: 'letter', v: o[ans] }, gates: o.map(x => ({ t: 'letter', v: x })), say: `Hitta bokstaven ${o[ans]}!`, fix: `Där var ${o[ans]}.` }; }
+  const a = 1 + Math.floor(Math.random() * 3), b = 1 + Math.floor(Math.random() * 3), s = a + b;
+  const wrong = shuffle([1, 2, 3, 4, 5, 6, 7].filter(x => x !== s)).slice(0, 2), o = wrong.slice(); o.splice(ans, 0, s);
+  return { kind: 'math', ans, sign: { t: 'text', v: `${a}+${b}` }, gates: o.map(x => ({ t: 'digit', v: x })), say: `${cap(NUMW[a])} plus ${NUMW[b]}?`, fix: `${cap(NUMW[a])} plus ${NUMW[b]} är ${NUMW[s]}.` };
+}
+function spawnFruit() {
+  const lane = [-1, 0, 1][Math.floor(Math.random() * 3)], n = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) { const nd = node(BANANA, { p: [lane * LANE, 1.0, 0], r: [0, 0, 0.4] }); ents.push({ kind: 'fruit', node: nd, x: lane * LANE, z: -95 - i * 2.2 }); }
+}
+function spawnLog() {
+  const lane = [-1, 0, 1][Math.floor(Math.random() * 3)];
+  ents.push({ kind: 'log', node: node(LOG, { p: [lane * LANE, 0, 0] }), x: lane * LANE, z: -95 });
+}
+function spawnGates() {
+  const z = -clamp(G.speed * G.react, 34, 110), root = node(null), plates = [];
+  G.ch.gates.forEach((sp, i) => {
+    const g = add(root, node(GATE, { p: [(i - 1) * LANE, 0, 0] }));
+    const back = add(g, node(PLATE_BACK, { p: [0, 3.95, 0] }));
+    plates.push(add(back, node(PLATE, { p: [0, 0, 0.02], tex: symTex(sp), blend: true, unlit: true })));
+  });
+  ents.push({ kind: 'gates', node: root, z, plates, ch: G.ch });
+}
+function spawnFinish() {
+  const root = node(ARCH); add(root, node(BANNER, { p: [0, 3.6, 0], tex: FINISH, blend: true, unlit: true }));
+  ents.push({ kind: 'finish', node: root, z: -80 });
+}
+function startSign() {
+  G.ch = newChallenge(); mPlate.tex = symTex(G.ch.sign); MON.ty = MON.show; MON.mood = 0;
+  G.mode = 'sign'; G.mt = 1.5; sfx.sign(); setTimeout(() => { if (G.state === 'play') say(G.ch.say); }, 450);
+  renderProg();
+}
+function resolve(e) {
+  const i = clamp(Math.round(G.zx / LANE), -1, 1) + 1, ok = i === e.ch.ans;
+  G.done++; G.results.push(ok);
+  if (ok) { G.right++; G.boost = 5; burst(G.zx, 2.2, -0.5, 26); sfx.good(); MON.mood = 1; say(['Rätt!', 'Snyggt!', 'Jättebra!', 'Ja, precis!'][Math.floor(Math.random() * 4)]); e.plates[i].pulse = 1; G.react = Math.max([4.6, 3.6, 2.8][S.tempo], G.react - 0.25); }
+  else { G.slow = Math.max(G.slow, 0.55); sfx.bad(); MON.mood = -1; say(e.ch.fix); e.plates[e.ch.ans].pulse = 1; G.react = Math.min([8.5, 7, 5.5][S.tempo], G.react + 0.8); }
+  G.mode = 'react'; G.mt = 1.6; renderProg();
+}
+function stumble() { G.slow = 1; G.wob = 0.7; sfx.bonk(); toast('Hoppsan! Hoppa över stockarna.', 1600); }
+function jump() { if (G.state !== 'play' || G.jy > 0.01 || G.vy !== 0) return; G.vy = 7.6; sfx.jump(); }
+function moveLane(d) { if (G.state !== 'play') return; G.lane = clamp(G.lane + d, -1, 1); }
+function endRace() {
+  G.state = 'end'; sfx.fanfare(); burst(G.zx, 2.5, -1, 40);
+  const st = G.right >= G.total - 1 ? 3 : G.right >= G.total / 2 ? 2 : 1;
+  $('#stars').innerHTML = [0, 1, 2].map(i => `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2 6.1 20.4l1.3-6.5L2.5 9.3l6.6-.8z" fill="${i < st ? '#ffc93c' : '#e6dcc6'}" stroke="${i < st ? '#e0a01a' : '#d4c8ae'}" stroke-width="1.4" stroke-linejoin="round"/></svg>`).join('');
+  $('#endR').textContent = `Rätt port: ${G.right} av ${G.total}`; $('#endB').textContent = `Bananer: ${G.ban}`;
+  setTimeout(() => { $('#end').hidden = false; $('#hud').hidden = true; say(`I mål! Du sprang rätt ${G.right} gånger av ${G.total}.`); }, 900);
+}
+function reset() {
+  for (const e of ents.splice(0)) {} G.t = 0; G.boost = 0; G.slow = 0; G.lane = 0; G.zx = 0; G.jy = 0; G.vy = 0; G.ban = 0; G.right = 0; G.done = 0; G.results = [];
+  G.react = [6.5, 5.2, 4.0][S.tempo]; G.mode = 'run'; G.mt = 3.2; G.fruitIn = 10; G.logIn = 45; MON.ty = MON.hide; $('#nb').textContent = '0'; renderProg();
+}
+function renderProg() {
+  $('#prog').innerHTML = Array.from({ length: G.total }, (_, i) => `<i class="${i < G.results.length ? (G.results[i] ? 'ok' : 'no') : (i === G.results.length && G.mode !== 'run' && G.state === 'play' ? 'now' : '')}"></i>`).join('');
+}
+let toastT = 0;
+function toast(t, ms) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, ms || 2200); }
+
+/* ================= huvudloop ================= */
+let last = performance.now(), clock = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!G.paused) update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+function update(dt) {
+  clock += dt;
+  const play = G.state === 'play';
+  const base = play ? [8.5, 11, 13.5][S.tempo] + Math.min(3, G.t * 0.03) : 6;
+  G.boost = Math.max(0, G.boost - dt * 1.6); G.slow = Math.max(0, G.slow - dt * 0.8);
+  G.speed = (base + G.boost) * (1 - 0.6 * G.slow);
+  const d = G.speed * dt; G.dist += d;
+  ground.uvo[1] = (G.dist / 6) % 1; path.uvo[1] = (G.dist / 6) % 1;
+  for (const o of decor) { o.p[2] += d; if (o.p[2] > 12) placeDecor(o, o.p[2] - WORLD_L); }
+
+  // tilt-utjämning
+  T.ang += (T.raw - T.ang) * Math.min(1, dt * 14);
+  const tilt = S.ctrl === 'tilt' && T.got && G.state !== 'menu';
+  if (S.ctrl === 'tilt' && G.state !== 'menu') {
+    stage.style.transform = `rotate(${(-T.ang * S.comp / 100).toFixed(2)}deg)`;
+    $('#wsvg').style.transform = `rotate(${T.ang.toFixed(1)}deg)`; $('#deg').textContent = T.got ? `${Math.round(T.ang)}°` : '–';
+  }
+
+  // styrning
+  const prev = G.zx;
+  if (play && tilt) {
+    const a = (S.invert ? -1 : 1) * T.ang;
+    if (S.tiltMode === 'wheel') {
+      const dead = 3, max = 20, m = Math.abs(a) < dead ? 0 : Math.sign(a) * Math.min(1, (Math.abs(a) - dead) / (max - dead));
+      if (m) G.zx += m * 8 * dt; else { const c = Math.round(G.zx / LANE) * LANE; G.zx += (c - G.zx) * Math.min(1, dt * 4); }
+    } else { const tg = clamp(a / 18, -1, 1) * LANE * 1.15; G.zx += (tg - G.zx) * Math.min(1, dt * 8); }
+  } else if (play) G.zx += (G.lane * LANE - G.zx) * Math.min(1, dt * 11);
+  else G.zx += (0 - G.zx) * Math.min(1, dt * 3);
+  G.zx = clamp(G.zx, -2.6, 2.6);
+  const vx = (G.zx - prev) / Math.max(dt, 1e-4);
+
+  // hopp
+  if (G.vy !== 0 || G.jy > 0) { G.vy -= 23 * dt; G.jy += G.vy * dt; if (G.jy <= 0) { G.jy = 0; G.vy = 0; } }
+
+  // zebrans animation
+  G.phase += dt * (4 + G.speed * 0.7);
+  zebra.p = [G.zx, G.jy, 0];
+  G.wob = Math.max(0, G.wob - dt);
+  zebra.r[1] += (-vx * 0.025 - zebra.r[1]) * Math.min(1, dt * 10);
+  zebra.r[2] += (-vx * 0.03 + Math.sin(clock * 30) * G.wob * 0.3 - zebra.r[2]) * Math.min(1, dt * 10);
+  const air = G.jy > 0.01;
+  torso.p[1] = air ? 0 : Math.abs(Math.sin(G.phase)) * 0.12;
+  torso.r[0] = air ? -0.1 : Math.sin(G.phase * 2) * 0.03;
+  for (const l of legs) l.r[0] = air ? (l.p[2] < 0 ? -0.7 : 0.7) : Math.sin(G.phase + l.ph) * 0.85;
+  tail.r[2] = Math.sin(clock * 6) * 0.35; tail.r[0] = 0.35 + G.speed * 0.02;
+  zshadow.p = [G.zx, 0.04, 0.1]; const ss = 1 / (1 + G.jy * 0.5); zshadow.s = [ss, ss, ss];
+
+  // spel-logik
+  if (play) {
+    G.t += dt;
+    if (G.mode === 'run') {
+      G.fruitIn -= d; if (G.fruitIn <= 0) { spawnFruit(); G.fruitIn = rnd(16, 28); }
+      G.logIn -= d; if (G.logIn <= 0) { if (G.mt > 2.6 && G.done > 0) spawnLog(); G.logIn = rnd(40, 70); }
+      G.mt -= dt;
+      if (G.mt <= 0) { if (G.done >= G.total) { spawnFinish(); G.mode = 'finish'; } else startSign(); }
+    } else if (G.mode === 'sign') { G.mt -= dt; if (G.mt <= 0) { spawnGates(); G.mode = 'gates'; } }
+    else if (G.mode === 'react') { G.mt -= dt; if (G.mt <= 0) { MON.ty = MON.hide; G.mode = 'run'; G.mt = rnd(4.5, 7); renderProg(); } }
+  }
+  for (let i = ents.length - 1; i >= 0; i--) {
+    const e = ents[i]; e.z += d; e.node.p[2] = e.z;
+    if (e.kind === 'fruit') {
+      e.node.r[1] += dt * 3;
+      if (!e.hit && Math.abs(e.z) < 0.8 && Math.abs(e.x - G.zx) < 0.9) { e.hit = true; e.node.vis = false; G.ban++; $('#nb').textContent = G.ban; sfx.pick(); }
+    } else if (e.kind === 'log') {
+      if (!e.hit && Math.abs(e.z) < 0.6 && Math.abs(e.x - G.zx) < 1.1 && G.jy < 0.55) { e.hit = true; stumble(); }
+    } else if (e.kind === 'gates') {
+      if (!e.res && e.z > -0.3 && play) { e.res = true; resolve(e); }
+      for (const p of e.plates) if (p.pulse) { p.pulse = Math.max(0, p.pulse - dt * 0.8); const s = 1 + Math.sin(p.pulse * 12) * 0.25 * p.pulse; p.s = [s, s, 1]; }
+    } else if (e.kind === 'finish') { if (!e.res && e.z > 0 && play) { e.res = true; endRace(); } }
+    if (e.z > 16) ents.splice(i, 1);
+  }
+  // apan
+  MON.y += (MON.ty - MON.y) * Math.min(1, dt * 4.5);
+  let my = MON.y; if (MON.mood > 0 && G.mode === 'react') my += Math.abs(Math.sin(clock * 11)) * 0.25;
+  monkey.p = [0, my, -10]; monkey.s = [0.8, 0.8, 0.8]; monkey.r = [0, 0, Math.sin(clock * 1.8) * 0.06];
+  mHead.r = [0, MON.mood < 0 && G.mode === 'react' ? Math.sin(clock * 18) * 0.35 : Math.sin(clock * 1.3) * 0.12, 0];
+  monkey.vis = MON.y < MON.hide - 0.3;
+  // konfetti
+  for (const p of confetti) { if (p.life <= 0) continue; p.life -= dt; p.v[1] -= 16 * dt; p.p = [p.p[0] + p.v[0] * dt, p.p[1] + p.v[1] * dt, p.p[2] + (p.v[2] + G.speed) * dt]; p.r[0] += dt * 8; p.r[1] += dt * 6; if (p.life <= 0 || p.p[1] < 0) { p.life = 0; p.vis = false; } }
+  // slingrande väg (bara utseende)
+  U.curve = Math.sin(G.dist * 0.007) * 0.0028 + Math.sin(G.dist * 0.0023 + 1) * 0.0018;
+}
+function draw() {
+  const p = PORTRAIT;
+  const eye = [G.zx * 0.35, p ? 6.6 : 6.0, p ? 11 : 8.6], tgt = [G.zx * 0.55, p ? -1.4 : -0.9, -14];
+  render(lookAt(eye, tgt));
+}
+
+/* ================= inmatning ================= */
+let ts = null;
+addEventListener('pointerdown', e => { if (e.target.closest('button,.panel,input,label')) return; ts = { x: e.clientX, y: e.clientY, t: performance.now(), used: false }; ac(); });
+addEventListener('pointermove', e => {
+  if (!ts || ts.used) return; const dx = e.clientX - ts.x, dy = e.clientY - ts.y;
+  if (Math.hypot(dx, dy) > 30) { ts.used = true; if (Math.abs(dx) > Math.abs(dy)) { if (S.ctrl !== 'tilt') moveLane(dx > 0 ? 1 : -1); } else if (dy < 0) jump(); }
+});
+addEventListener('pointerup', e => {
+  if (ts && !ts.used && performance.now() - ts.t < 400) {
+    if (S.ctrl === 'tilt') jump(); else { const x = e.clientX / innerWidth; if (x < 0.36) moveLane(-1); else if (x > 0.64) moveLane(1); else jump(); }
+  }
+  ts = null;
+});
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') moveLane(-1); else if (e.key === 'ArrowRight') moveLane(1);
+  else if (e.key === 'ArrowUp' || e.key === ' ') { jump(); e.preventDefault(); } else if (e.key === 'Escape' && G.state === 'play') openPause();
+});
+addEventListener('resize', layout);
+if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', () => { T.inv = 0; setTimeout(layout, 50); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play' && !G.paused) openPause(); });
+
+/* ================= menyer ================= */
+function seg(id, key, conv) {
+  const el = $(id);
+  const paint = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(S[key]) === b.dataset.v));
+  el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S[key] = conv ? conv(b.dataset.v) : b.dataset.v; save(); paint(); if (key === 'ctrl') hint(); });
+  paint();
+}
+seg('#ctrlSeg', 'ctrl'); seg('#contSeg', 'content'); seg('#tempoSeg', 'tempo', Number); seg('#tiltSeg', 'tiltMode');
+function hint() {
+  $('#hint').innerHTML = S.ctrl === 'tilt'
+    ? 'Håll plattan på bredden med båda händerna och <b>vrid den som en ratt</b>. Bilden vrider sig tillbaka så att marken ser rak ut. Tryck var som helst för att hoppa.'
+    : '<b>Svep</b> åt sidan eller tryck till vänster/höger för att byta fil. Svep uppåt eller tryck i mitten för att hoppa. På dator: piltangenterna.';
+}
+hint();
+const comp = $('#comp'); comp.value = S.comp; $('#compv').textContent = S.comp + ' %';
+comp.addEventListener('input', () => { S.comp = +comp.value; $('#compv').textContent = S.comp + ' %'; save(); });
+$('#inv').checked = S.invert; $('#inv').addEventListener('change', e => { S.invert = e.target.checked; save(); });
+$('#voice').checked = S.voice; $('#voice').addEventListener('change', e => { S.voice = e.target.checked; save(); });
+
+async function start() {
+  ac();
+  try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
+  if (S.ctrl === 'tilt') {
+    const ok = await enableTilt();
+    if (!ok) { S.ctrl = 'swipe'; toast('Lutningen fick inte tillstånd – vi kör med svep i stället.', 4000); }
+    else {
+      T.inv = 0; T.got = false;
+      setTimeout(() => { if (G.state === 'play' && S.ctrl === 'tilt' && !T.got) { S.ctrl = 'swipe'; layout(); $('#wheel').hidden = true; toast('Ingen lutning hittades här. Öppna spelet från GitHub-sidan på plattan för att styra med lutning. Nu: svep.', 6000); } }, 1800);
+    }
+  }
+  $('#menu').hidden = true; $('#end').hidden = true; $('#hud').hidden = false; $('#wheel').hidden = S.ctrl !== 'tilt';
+  G.state = 'play'; G.paused = false; reset(); layout();
+  say('Klara, färdiga, spring!');
+}
+function openPause() { G.paused = true; $('#settings').hidden = false; $('#tiltSeg').parentElement.querySelectorAll('.lbl,#tiltSeg,.row').forEach(el => el.style.display = ''); }
+function toMenu() { G.state = 'menu'; G.paused = false; for (const e of ents.splice(0)) {} MON.ty = MON.hide; $('#settings').hidden = true; $('#end').hidden = true; $('#hud').hidden = true; $('#menu').hidden = false; layout(); }
+$('#go').addEventListener('click', start);
+$('#again').addEventListener('click', start);
+$('#tomenu').addEventListener('click', toMenu);
+$('#pause').addEventListener('click', openPause);
+$('#resume').addEventListener('click', () => { $('#settings').hidden = true; G.paused = false; last = performance.now(); });
+$('#quit').addEventListener('click', toMenu);
+
+layout(); renderProg();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+})();
+</script>

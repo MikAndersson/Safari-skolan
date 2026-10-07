@@ -1,0 +1,8 @@
+shots/
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+proto/zebralopp/shots/
+proto/zebralopp/artifact.html
+proto/zebralopp/index.html
