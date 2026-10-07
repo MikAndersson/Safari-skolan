@@ -8,6 +8,13 @@ Ett läs- och mattespel för surfplatta, för förskoleklass till årskurs 3. Ba
 
 Öppna `index.html` i en webbläsare (eller aktivera GitHub Pages: branch `main`, mapp `/ (root)`). Allt ligger i en enda HTML-fil utan beroenden. Framsteg sparas i webbläsaren (`localStorage`) på den enhet barnet spelar på.
 
+## Minispel (prototyper)
+
+Varje minispel utvecklas som ett eget spel tills vidare:
+
+- `zebraloppet/` – första prototypen: spring genom rätt port efter apans skylt. Källkod i `proto/zebralopp/`.
+- `zebraloppet2/` – välj djur (buffel, zebra, antilop, gasell), slingrande banor, hinder, ruschmätare och tre motståndare. Källkod i `proto/zebralopp2/parts/`, bygg med `node proto/zebralopp2/build.js`, testa med `python3 proto/zebralopp2/test/play.py`.
+
 ## Bygga och testa
 
 ```
