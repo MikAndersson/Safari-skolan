@@ -1,0 +1,15 @@
+{
+  "name": "safari-skolan",
+  "version": "1.0.0",
+  "description": "Läs- och mattespel för F–åk 3 där barnet bygger upp ett eget safari",
+  "main": "build.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node test/engine.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
