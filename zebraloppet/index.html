@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
+<html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#58afe6"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Zebraloppet"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png"></head><body>
 <title>Zebraloppet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +45,18 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
 .stars svg{width:54px;height:54px}
 .res{display:flex;gap:14px;justify-content:center;font-weight:800;font-size:22px}
 .res span{background:#fff4dc;border-radius:14px;padding:4px 14px}
-.rot{position:fixed;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(36,50,58,.9);color:#fff;font-weight:800;font-size:20px;padding:16px 22px;border-radius:20px;text-align:center;pointer-events:none}
+.rot{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;background:rgba(28,48,62,.93);color:#fff;text-align:center}
+.rot b{font-size:26px;line-height:1.2;max-width:320px}
+.rot small{font-size:16px;opacity:.85;max-width:300px}
+.phone{width:64px;height:112px;border:6px solid #fff;border-radius:16px;position:relative;animation:turn 2.4s ease-in-out infinite}
+.phone::before{content:"";position:absolute;left:50%;top:6px;width:16px;height:4px;margin-left:-8px;border-radius:2px;background:#fff}
+.phone::after{content:"";position:absolute;inset:16px 6px;border-radius:4px;background:linear-gradient(#7cc8f0 0 45%,#93c653 45%)}
+.turnwrap{position:relative;width:150px;height:150px;display:grid;place-items:center}
+.turnwrap svg{position:absolute;inset:0;width:100%;height:100%;animation:arr 2.4s ease-in-out infinite}
+@keyframes turn{0%,15%{transform:rotate(0)}55%,85%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@keyframes arr{0%,10%{opacity:0}30%,60%{opacity:1}85%,100%{opacity:0}}
+.count{position:fixed;z-index:19;left:50%;top:42%;transform:translate(-50%,-50%);font-size:110px;font-weight:800;color:#fff;text-shadow:0 6px 0 rgba(0,0,0,.25);pointer-events:none}
+.fsbtn{align-self:center;border:0;background:none;color:var(--muted);font:700 15px "Baloo 2",system-ui;text-decoration:underline;cursor:pointer}
 @media (max-height:460px){.card{padding:14px 18px;gap:6px}.card h1{font-size:30px}.go{min-height:52px;font-size:24px}.seg button{min-height:40px;font-size:15px}.ib{width:44px;height:44px}.pill{font-size:18px}}
 </style>
 
@@ -59,7 +70,12 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
   <button class="ib" id="pause" aria-label="Paus och inställningar">II</button>
 </div>
 <div class="toast" id="toast" hidden></div>
-<div class="rot" id="rot" hidden>Håll plattan på bredden,<br>som en ratt</div>
+<div class="rot" id="rot" hidden>
+  <div class="turnwrap"><div class="phone"></div><svg viewBox="0 0 150 150" aria-hidden="true"><path d="M118 52 A52 52 0 0 0 52 26" fill="none" stroke="#ffd23f" stroke-width="7" stroke-linecap="round"/><path d="M58 14 L44 27 L61 35" fill="none" stroke="#ffd23f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <b>Vrid mobilen på sidan igen</b>
+  <small id="rotSub">Spelet väntar på dig.</small>
+</div>
+<div class="count" id="count" hidden></div>
 
 <div class="panel" id="menu">
   <div class="card">
@@ -73,6 +89,7 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
     <div class="seg" id="tempoSeg"><button data-v="0">Lugnt</button><button data-v="1">Lagom</button><button data-v="2">Snabbt</button></div>
     <button class="go" id="go">Spring!</button>
     <p class="hint" id="hint"></p>
+    <p class="hint" id="fshint" hidden></p>
   </div>
 </div>
 
@@ -112,7 +129,7 @@ const cv = $('#gl'), stage = $('#stage');
 const gl = cv.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: false }) || cv.getContext('experimental-webgl');
 if (!gl) { $('#menu').innerHTML = '<div class="card"><h1>Zebraloppet</h1><p class="sub">Den här enheten kan tyvärr inte visa 3D-grafik (WebGL).</p></div>'; return; }
 
-const VS = `precision mediump float;
+const VS = `precision highp float;
 attribute vec3 aP; attribute vec3 aN; attribute vec3 aC; attribute vec2 aU;
 uniform mat4 uM; uniform mat4 uV; uniform mat4 uPr;
 uniform float uBend; uniform float uBendX; uniform float uCurve; uniform float uFogN; uniform float uFogF;
@@ -299,16 +316,17 @@ const C = {
   rock: hex(0xa7a39a), mon: hex(0x8b5a2b), monL: hex(0xe9c79d), vine: hex(0x4c8a2c), ban: hex(0xffd23f), banT: hex(0x6b4a1a), log: hex(0x9a6234), logE: hex(0xe6c48b), mound: hex(0xc58a52)
 };
 const LANE = 2.0, WORLD_L = 242, ZFAR = -230;
-function grid(w, l, nx, nz, us, vs, y, col) {
-  const b = mb();
+function grid(w, l, nx, nz, us, vs, y, col, x0w, b) {
+  b = b || mb(); if (x0w == null) x0w = -w / 2;
   for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
-    const x0 = -w / 2 + i * w / nx, x1 = x0 + w / nx, z0 = 12 - j * l / nz, z1 = z0 - l / nz;
+    const x0 = x0w + i * w / nx, x1 = x0 + w / nx, z0 = 12 - j * l / nz, z1 = z0 - l / nz;
     b.quad([x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1], col, [0, y - 1, 0], [[x0 / us, -z0 / vs], [x1 / us, -z0 / vs], [x1 / us, -z1 / vs], [x0 / us, -z1 / vs]]);
   }
-  return b.build();
+  return b;
 }
-const ground = node(grid(96, WORLD_L, 16, 120, 6, 6, 0, [1, 1, 1]), { tex: GRASS, uvo: [0, 0] });
-const path = node(grid(6.6, WORLD_L, 1, 120, 6.6, 6, 0.02, [1, 1, 1]), { tex: SAND, uvo: [0, 0] });
+const PATH_HW = 3.3;
+const ground = node((() => { const b = grid(48 - PATH_HW, WORLD_L, 8, 120, 6, 6, 0, [1, 1, 1], -48); grid(48 - PATH_HW, WORLD_L, 8, 120, 6, 6, 0, [1, 1, 1], PATH_HW, b); return b.build(); })(), { tex: GRASS, uvo: [0, 0] });
+const path = node(grid(PATH_HW * 2, WORLD_L, 2, 120, PATH_HW * 2, 6, 0, [1, 1, 1]).build(), { tex: SAND, uvo: [0, 0] });
 // stigens uv börjar vid x=-3.3 => förskjut u
 path.uvo = [0.5, 0];
 
@@ -351,7 +369,7 @@ const legs = [[-0.31, -0.68, 0], [0.31, -0.68, 1], [-0.31, 0.7, 1], [0.31, 0.7, 
   const b = mb(); b.a = legMesh.a.map((v, i) => (i % 11 === 1 ? v - 0.43 : v)); b.at([0, -0.9, 0]).box(0.23, 0.1, 0.25, C.zb);
   const n = add(torso, node(b.build(), { p: [x, 0.93, z] })); n.ph = ph * Math.PI + (z > 0 ? 0.5 : 0); return n;
 });
-const zshadow = node(mb().plane(1.8, 2.6).build(), { tex: SHADOW, blend: true, unlit: true, nodepth: true, r: [-Math.PI / 2, 0, 0], p: [0, 0.04, 0] });
+const zshadow = node(mb().plane(1.8, 2.6).build(), { tex: SHADOW, blend: true, unlit: true, nodepth: true, po: true, r: [-Math.PI / 2, 0, 0], p: [0, 0.05, 0] });
 
 /* apan med skylten (hänger framför kameran) */
 const monkey = node(null, { cam: true });
@@ -376,7 +394,7 @@ const mHead = add(monkey, node((() => {
   return b.build();
 })(), { p: [0, 0.68, 0] }));
 const mSign = add(monkey, node(mb().at([0, 0, -0.05]).box(1.72, 1.72, 0.08, C.wood).build(), { p: [0, -0.95, 0.38] }));
-const mPlate = add(mSign, node(mb().plane(1.6, 1.6).build(), { p: [0, 0, 0.05], tex: null, blend: true, unlit: true }));
+const mPlate = add(mSign, node(mb().plane(1.6, 1.6).build(), { p: [0, 0, 0.08], tex: null, blend: true, unlit: true, po: true }));
 const MON = { y: 20, ty: 20, show: 2, hide: 9, mood: 0, mt: 0 };
 
 /* dekor: akacior, buskar, stenar, gräs, termitstackar */
@@ -428,10 +446,10 @@ function layout() {
   gl.viewport(0, 0, cv.width, cv.height);
   VF = (PORTRAIT ? 66 : 52) * Math.PI / 180;
   const fov = 2 * Math.atan(Math.tan(VF / 2) * SH / H);
-  proj = persp(fov, SW / SH, 0.1, 260);
+  proj = persp(fov, SW / SH, 0.4, 240);
   MON.show = 10 * Math.tan(VF / 2) - 1.3; MON.hide = MON.show + 8;
   if (MON.ty > MON.show + 1) MON.ty = MON.hide;
-  $('#rot').hidden = !(tilt && PORTRAIT);
+  checkOrient();
 }
 function collect(n, parent, out) {
   if (!n.vis) return;
@@ -447,7 +465,9 @@ function drawItem(n, w, view) {
   gl.bindBuffer(gl.ARRAY_BUFFER, n.mesh.b);
   gl.vertexAttribPointer(A.aP, 3, gl.FLOAT, false, 44, 0); gl.vertexAttribPointer(A.aN, 3, gl.FLOAT, false, 44, 12);
   gl.vertexAttribPointer(A.aC, 3, gl.FLOAT, false, 44, 24); gl.vertexAttribPointer(A.aU, 2, gl.FLOAT, false, 44, 36);
+  if (n.po) { gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-2, -4); }
   gl.drawArrays(gl.TRIANGLES, 0, n.mesh.n);
+  if (n.po) gl.disable(gl.POLYGON_OFFSET_FILL);
 }
 function render(view) {
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -518,7 +538,7 @@ async function enableTilt() {
 window.__tilt = T;
 
 /* ================= spelet ================= */
-const G = { state: 'menu', paused: false, t: 0, dist: 0, speed: 6, boost: 0, slow: 0, zx: 0, lane: 0, jy: 0, vy: 0, phase: 0, ban: 0, right: 0, done: 0, total: 8, react: 5, mode: 'run', mt: 3, ch: null, fruitIn: 14, logIn: 40, wob: 0, results: [] };
+const G = { state: 'menu', paused: false, rotPause: false, t: 0, dist: 0, speed: 6, boost: 0, slow: 0, zx: 0, lane: 0, jy: 0, vy: 0, phase: 0, ban: 0, right: 0, done: 0, total: 8, react: 5, mode: 'run', mt: 3, ch: null, fruitIn: 14, logIn: 40, wob: 0, results: [] };
 window.__G = G;
 const NUMW = ['noll', 'ett', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju'];
 const cap = s => s[0].toUpperCase() + s.slice(1);
@@ -547,12 +567,12 @@ function spawnGates() {
   G.ch.gates.forEach((sp, i) => {
     const g = add(root, node(GATE, { p: [(i - 1) * LANE, 0, 0] }));
     const back = add(g, node(PLATE_BACK, { p: [0, 3.95, 0] }));
-    plates.push(add(back, node(PLATE, { p: [0, 0, 0.02], tex: symTex(sp), blend: true, unlit: true })));
+    plates.push(add(back, node(PLATE, { p: [0, 0, 0.07], tex: symTex(sp), blend: true, unlit: true, po: true })));
   });
   ents.push({ kind: 'gates', node: root, z, plates, ch: G.ch });
 }
 function spawnFinish() {
-  const root = node(ARCH); add(root, node(BANNER, { p: [0, 3.6, 0], tex: FINISH, blend: true, unlit: true }));
+  const root = node(ARCH); add(root, node(BANNER, { p: [0, 3.6, 0.2], tex: FINISH, blend: true, unlit: true, po: true }));
   ents.push({ kind: 'finish', node: root, z: -80 });
 }
 function startSign() {
@@ -591,7 +611,7 @@ function toast(t, ms) { const el = $('#toast'); el.textContent = t; el.hidden = 
 let last = performance.now(), clock = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (!G.paused) update(dt);
+  if (!G.paused && !G.rotPause) update(dt);
   draw();
   requestAnimationFrame(frame);
 }
@@ -640,7 +660,7 @@ function update(dt) {
   torso.r[0] = air ? -0.1 : Math.sin(G.phase * 2) * 0.03;
   for (const l of legs) l.r[0] = air ? (l.p[2] < 0 ? -0.7 : 0.7) : Math.sin(G.phase + l.ph) * 0.85;
   tail.r[2] = Math.sin(clock * 6) * 0.35; tail.r[0] = 0.35 + G.speed * 0.02;
-  zshadow.p = [G.zx, 0.04, 0.1]; const ss = 1 / (1 + G.jy * 0.5); zshadow.s = [ss, ss, ss];
+  zshadow.p = [G.zx, 0.05, 0.1]; const ss = 1 / (1 + G.jy * 0.5); zshadow.s = [ss, ss, ss];
 
   // spel-logik
   if (play) {
@@ -701,8 +721,43 @@ addEventListener('keydown', e => {
   else if (e.key === 'ArrowUp' || e.key === ' ') { jump(); e.preventDefault(); } else if (e.key === 'Escape' && G.state === 'play') openPause();
 });
 addEventListener('resize', layout);
+addEventListener('orientationchange', () => setTimeout(layout, 60));
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', () => { T.inv = 0; setTimeout(layout, 50); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play' && !G.paused) openPause(); });
+
+/* ================= helskärm och liggande läge ================= */
+const TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+const fsEl = document.documentElement;
+const canFS = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
+const standalone = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+function goFullscreen() {
+  if (!TOUCH || standalone) return;
+  try {
+    const isFS = document.fullscreenElement || document.webkitFullscreenElement;
+    const lock = () => { try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+    if (isFS) { lock(); return; }
+    if (fsEl.requestFullscreen) { const p = fsEl.requestFullscreen({ navigationUI: 'hide' }); if (p && p.then) p.then(lock).catch(() => {}); }
+    else if (fsEl.webkitRequestFullscreen) { fsEl.webkitRequestFullscreen(); setTimeout(lock, 300); }
+  } catch (e) {}
+}
+if (TOUCH && !canFS && !standalone) {
+  $('#fshint').hidden = false;
+  $('#fshint').innerHTML = '<b>Helskärm på iPhone:</b> tryck på dela-knappen och välj <b>Lägg till på hemskärmen</b>. Öppna sedan spelet därifrån.';
+}
+let countT = 0;
+function checkOrient() {
+  const portrait = TOUCH && innerHeight > innerWidth;
+  $('#rot').hidden = !portrait;
+  if (portrait) {
+    clearInterval(countT); $('#count').hidden = true;
+    if (G.state === 'play' && !G.rotPause) { G.rotPause = true; try { speechSynthesis.cancel(); } catch (e) {} }
+    $('#rotSub').textContent = G.state === 'play' ? 'Spelet är pausat och väntar på dig.' : 'Zebraloppet spelas med mobilen på sidan.';
+  } else if (G.rotPause && !G.paused) {
+    let n = 3; const el = $('#count'); el.hidden = false; el.textContent = n; clearInterval(countT);
+    countT = setInterval(() => { n--; if (n <= 0) { clearInterval(countT); el.hidden = true; G.rotPause = false; last = performance.now(); } else el.textContent = n; }, 700);
+  }
+}
+window.__checkOrient = checkOrient;
 
 /* ================= menyer ================= */
 function seg(id, key, conv) {
@@ -724,6 +779,7 @@ $('#inv').checked = S.invert; $('#inv').addEventListener('change', e => { S.inve
 $('#voice').checked = S.voice; $('#voice').addEventListener('change', e => { S.voice = e.target.checked; save(); });
 
 async function start() {
+  goFullscreen();
   ac();
   try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
   if (S.ctrl === 'tilt') {
@@ -735,16 +791,16 @@ async function start() {
     }
   }
   $('#menu').hidden = true; $('#end').hidden = true; $('#hud').hidden = false; $('#wheel').hidden = S.ctrl !== 'tilt';
-  G.state = 'play'; G.paused = false; reset(); layout();
+  G.state = 'play'; G.paused = false; G.rotPause = false; reset(); layout();
   say('Klara, färdiga, spring!');
 }
 function openPause() { G.paused = true; $('#settings').hidden = false; $('#tiltSeg').parentElement.querySelectorAll('.lbl,#tiltSeg,.row').forEach(el => el.style.display = ''); }
-function toMenu() { G.state = 'menu'; G.paused = false; for (const e of ents.splice(0)) {} MON.ty = MON.hide; $('#settings').hidden = true; $('#end').hidden = true; $('#hud').hidden = true; $('#menu').hidden = false; layout(); }
+function toMenu() { G.state = 'menu'; G.paused = false; G.rotPause = false; for (const e of ents.splice(0)) {} MON.ty = MON.hide; $('#settings').hidden = true; $('#end').hidden = true; $('#hud').hidden = true; $('#menu').hidden = false; layout(); }
 $('#go').addEventListener('click', start);
 $('#again').addEventListener('click', start);
 $('#tomenu').addEventListener('click', toMenu);
 $('#pause').addEventListener('click', openPause);
-$('#resume').addEventListener('click', () => { $('#settings').hidden = true; G.paused = false; last = performance.now(); });
+$('#resume').addEventListener('click', () => { goFullscreen(); $('#settings').hidden = true; G.paused = false; last = performance.now(); });
 $('#quit').addEventListener('click', toMenu);
 
 layout(); renderProg();
