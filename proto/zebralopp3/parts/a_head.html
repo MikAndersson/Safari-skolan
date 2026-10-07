@@ -1,0 +1,154 @@
+<title>Zebraloppet 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+:root{--ink:#24323a;--card:#fffdf6;--line:#eadfc6;--acc:#f59e0b;--acc2:#ea7a0b;--good:#22a35a;--bad:#ef8a3c;--muted:#6b7a80;--rush:#ff6a3d;color-scheme:light}
+html,body{height:100%;margin:0;overflow:hidden;background:#79c4ee;font-family:"Baloo 2",ui-rounded,system-ui,sans-serif;color:var(--ink);
+  -webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#stage{position:fixed;transform-origin:50% 50%;background:linear-gradient(#58afe6 0%,#9fd8f4 38%,#d4effa 62%,#d4effa 100%);overflow:hidden;will-change:transform}
+#stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sun{position:absolute;width:12%;aspect-ratio:1;right:24%;top:20%;border-radius:50%;background:radial-gradient(circle,#fff8d0 0 45%,rgba(255,240,170,.55) 46% 62%,rgba(255,240,170,0) 63%)}
+.lines{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:repeating-conic-gradient(from 0deg at 50% 46%,rgba(255,255,255,0) 0deg 5deg,rgba(255,255,255,.55) 5.4deg 6deg,rgba(255,255,255,0) 6.4deg 11deg);
+  -webkit-mask:radial-gradient(circle at 50% 46%,transparent 0 30%,#000 55%);mask:radial-gradient(circle at 50% 46%,transparent 0 30%,#000 55%);animation:spin 0.6s linear infinite}
+#stage.rushing .lines{opacity:.85}
+@keyframes spin{to{transform:rotate(11deg)}}
+.hud{position:fixed;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));right:calc(12px + env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px;pointer-events:none}
+.pill{background:rgba(255,253,246,.94);border-radius:999px;padding:4px 14px 4px 8px;font-weight:800;font-size:22px;display:flex;align-items:center;gap:8px;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.pill svg{width:30px;height:30px}
+.meter{width:96px;height:14px;border-radius:8px;background:#efe6d2;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd23f,#ff8a3d);border-radius:8px}
+.meter.full i{background:linear-gradient(90deg,#ff8a3d,#ff3d6a)}
+.place{font-size:26px;min-width:60px;justify-content:center}
+.place small{font-size:14px;color:var(--muted)}
+.prog{display:flex;gap:6px;background:rgba(255,253,246,.94);border-radius:999px;padding:8px 12px;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.prog i{width:14px;height:14px;border-radius:50%;background:#e4dccb;display:block}
+.prog i.ok{background:var(--good)} .prog i.no{background:var(--bad)} .prog i.now{box-shadow:0 0 0 3px #f8c64a}
+.sp{flex:1}
+.ib{pointer-events:auto;width:52px;height:52px;border:0;border-radius:50%;background:rgba(255,253,246,.94);box-shadow:0 3px 0 rgba(0,0,0,.12);font:800 20px "Baloo 2",system-ui;color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.wheel{display:flex;align-items:center;gap:6px;background:rgba(255,253,246,.94);border-radius:999px;padding:4px 10px 4px 4px;box-shadow:0 3px 0 rgba(0,0,0,.12);font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.wheel svg{width:38px;height:38px}
+.rushbtn{position:fixed;z-index:6;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:88px;height:88px;border-radius:50%;border:0;background:#d9d2c4;color:#fff;font:800 16px "Baloo 2",system-ui;box-shadow:0 5px 0 rgba(0,0,0,.18);display:grid;place-items:center;cursor:pointer;touch-action:manipulation}
+.rushbtn svg{width:40px;height:40px;margin-bottom:-14px}
+.rushbtn.ready{background:var(--rush);animation:pulse 0.9s ease-in-out infinite}
+.rushbtn.on{background:#ff3d6a}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.toast{position:fixed;z-index:6;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:rgba(36,50,58,.88);color:#fff;font-weight:700;font-size:18px;padding:10px 18px;border-radius:16px;max-width:min(520px,70vw);text-align:center;pointer-events:none}
+.panel{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:16px;background:rgba(30,60,80,.18);overflow:auto}
+.card{background:var(--card);border-radius:28px;box-shadow:0 10px 0 rgba(0,0,0,.12),0 20px 50px rgba(0,0,0,.18);padding:20px 24px;width:min(640px,100%);display:flex;flex-direction:column;gap:9px;box-sizing:border-box}
+.card h1{margin:0;font-size:38px;line-height:1;color:#2b3a42;text-wrap:balance}
+.card h2{margin:0;font-size:34px;line-height:1.05}
+.sub{margin:0;color:var(--muted);font-weight:600}
+.lbl{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{flex:1 1 auto;min-height:46px;border:2px solid var(--line);background:#fff;border-radius:16px;font:700 17px "Baloo 2",system-ui;color:var(--ink);padding:6px 12px;cursor:pointer}
+.seg button.on{border-color:var(--acc);background:#fff4dc;box-shadow:inset 0 0 0 1px var(--acc)}
+.animals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.animals button{border:2px solid var(--line);background:#fff;border-radius:18px;padding:8px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font:700 16px "Baloo 2",system-ui;color:var(--ink);min-width:0}
+.animals button.on{border-color:var(--acc);background:#fff4dc;box-shadow:inset 0 0 0 1px var(--acc)}
+.animals b{font-size:18px;line-height:1.1}
+.animals small{font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.2;text-align:center}
+.dots{display:flex;gap:3px}.dots i{width:9px;height:9px;border-radius:50%;background:#e6dcc6}.dots i.f{background:var(--acc)}
+.go{margin-top:4px;min-height:60px;border:0;border-radius:22px;background:var(--acc);box-shadow:0 6px 0 var(--acc2);color:#fff;font:800 28px "Baloo 2",system-ui;cursor:pointer}
+.go:active{transform:translateY(3px);box-shadow:0 3px 0 var(--acc2)}
+.btn2{min-height:50px;border:2px solid var(--line);border-radius:18px;background:#fff;font:700 18px "Baloo 2",system-ui;color:var(--ink);cursor:pointer}
+.hint{margin:0;font-size:14px;color:var(--muted);line-height:1.35}
+.hint b{color:var(--ink)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row label{display:flex;align-items:center;gap:8px;font-weight:700}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--acc)}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
+.stars{display:flex;gap:6px;justify-content:center}
+.stars svg{width:50px;height:50px}
+.res{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;font-weight:800;font-size:20px}
+.res span{background:#fff4dc;border-radius:14px;padding:3px 14px}
+.podium{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none}
+.podium li{display:flex;gap:10px;align-items:center;font-weight:700;font-size:18px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:4px 12px}
+.podium li.me{border-color:var(--acc);background:#fff4dc}
+.podium li b{width:36px}
+.rot{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;background:rgba(28,48,62,.93);color:#fff;text-align:center}
+.rot b{font-size:26px;line-height:1.2;max-width:320px}
+.rot small{font-size:16px;opacity:.85;max-width:300px}
+.phone{width:64px;height:112px;border:6px solid #fff;border-radius:16px;position:relative;animation:turn 2.4s ease-in-out infinite}
+.phone::before{content:"";position:absolute;left:50%;top:6px;width:16px;height:4px;margin-left:-8px;border-radius:2px;background:#fff}
+.phone::after{content:"";position:absolute;inset:16px 6px;border-radius:4px;background:linear-gradient(#7cc8f0 0 45%,#93c653 45%)}
+.turnwrap{position:relative;width:150px;height:150px;display:grid;place-items:center}
+.turnwrap svg{position:absolute;inset:0;width:100%;height:100%;animation:arr 2.4s ease-in-out infinite}
+@keyframes turn{0%,15%{transform:rotate(0)}55%,85%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@keyframes arr{0%,10%{opacity:0}30%,60%{opacity:1}85%,100%{opacity:0}}
+.count{position:fixed;z-index:19;left:50%;top:42%;transform:translate(-50%,-50%);font-size:110px;font-weight:800;color:#fff;text-shadow:0 6px 0 rgba(0,0,0,.25);pointer-events:none}
+@media (max-height:460px){.card{padding:12px 16px;gap:5px}.card h1{font-size:28px}.go{min-height:48px;font-size:24px}.seg button{min-height:38px;font-size:15px}.ib{width:44px;height:44px}.pill{font-size:18px}.place{font-size:22px}.rushbtn{width:74px;height:74px}.animals button{padding:4px}.animals small{display:none}.lbl{margin-top:0}}
+@media (max-width:520px){.animals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div id="stage"><div class="sun"></div><canvas id="gl"></canvas><div class="lines"></div></div>
+
+<div class="hud" id="hud" hidden>
+  <div class="pill" aria-label="Ruschmätare"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 12c2 14 14 22 26 18-9-1-17-8-20-20z" fill="#ffd23f" stroke="#c99a1a" stroke-width="2" stroke-linejoin="round"/><path d="M8 12l-1-4 4 1z" fill="#6b4a1a"/></svg><div class="meter" id="meter"><i></i></div></div>
+  <div class="prog" id="prog"></div>
+  <span class="sp"></span>
+  <div class="wheel" id="wheel" hidden><svg viewBox="0 0 40 40" id="wsvg" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="#2b3a42" stroke-width="4"/><circle cx="20" cy="20" r="4" fill="#2b3a42"/><path d="M5 20h11M24 20h11M20 24v12" stroke="#2b3a42" stroke-width="4"/><circle cx="20" cy="4.5" r="2.6" fill="#ef4444"/></svg><span id="deg"></span></div>
+  <div class="pill place" id="place">1<small>:a</small></div>
+  <button class="ib" id="pause" aria-label="Paus och inställningar">II</button>
+</div>
+<button class="rushbtn" id="rush" hidden aria-label="Rusch"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M23 3L9 23h9l-3 14 16-22h-10z" fill="#fff"/></svg><span>RUSCH</span></button>
+<div class="toast" id="toast" hidden></div>
+<div class="rot" id="rot" hidden>
+  <div class="turnwrap"><div class="phone"></div><svg viewBox="0 0 150 150" aria-hidden="true"><path d="M118 52 A52 52 0 0 0 52 26" fill="none" stroke="#ffd23f" stroke-width="7" stroke-linecap="round"/><path d="M58 14 L44 27 L61 35" fill="none" stroke="#ffd23f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <b>Vrid mobilen på sidan igen</b>
+  <small id="rotSub">Spelet väntar på dig.</small>
+</div>
+<div class="count" id="count" hidden></div>
+
+<div class="panel" id="menu">
+  <div class="card">
+    <h1>Zebraloppet 3</h1>
+    <p class="sub">Prototyp – välj djur, välj rätt stig i vägskälen och vinn loppet!</p>
+    <div class="lbl">Djur</div>
+    <div class="animals" id="animSeg"></div>
+    <div class="lbl">Styrning</div>
+    <div class="seg" id="ctrlSeg"><button data-v="swipe">Svep eller tryck</button><button data-v="tilt">Luta som en ratt</button></div>
+    <div class="lbl">Apans skyltar</div>
+    <div class="seg" id="contSeg"><button data-v="shape">Former</button><button data-v="number">Siffror</button><button data-v="letter">Bokstäver</button><button data-v="math">Plus</button><button data-v="mix">Blandat</button></div>
+    <button class="go" id="go">Spring!</button>
+    <p class="hint" id="hint"></p>
+    <p class="hint" id="fshint" hidden></p>
+  </div>
+</div>
+
+<div class="panel" id="settings" hidden>
+  <div class="card">
+    <h2>Paus</h2>
+    <button class="go" id="resume">Fortsätt</button>
+    <div class="lbl">Lutning</div>
+    <div class="seg" id="tiltSeg"><button data-v="wheel">Ratt: luta för att svänga</button><button data-v="direct">Direkt: lutningen är platsen</button></div>
+    <div class="row"><label for="comp">Bilden hålls rak</label><input type="range" id="comp" min="0" max="100" step="5"><b id="compv"></b></div>
+    <div class="lbl">Banan (prova dig fram)</div>
+    <div class="row"><label for="hills">Backar</label><input type="range" id="hills" min="0" max="200" step="10"><b id="hillsv"></b></div>
+    <div class="row"><label for="curves">Kurvor</label><input type="range" id="curves" min="0" max="200" step="10"><b id="curvesv"></b></div>
+    <div class="row"><label for="pull">Kurvorna drar</label><input type="range" id="pull" min="0" max="200" step="10"><b id="pullv"></b></div>
+    <div class="row"><label><input type="checkbox" id="inv"> Vänd lutningen</label><label><input type="checkbox" id="voice"> Röst</label></div>
+    <button class="btn2" id="quit">Till startsidan</button>
+  </div>
+</div>
+
+<div class="panel" id="end" hidden>
+  <div class="card">
+    <h2 id="endT">I mål!</h2>
+    <div class="stars" id="stars"></div>
+    <div class="res"><span id="endR"></span><span id="endB"></span></div>
+    <ol class="podium" id="podium"></ol>
+    <button class="go" id="again">Spring igen</button>
+    <button class="btn2" id="tomenu">Startsidan</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const TAU = Math.PI * 2, clamp = (v, a, b) => v < a ? a : v > b ? b : v, rnd = (a, b) => a + Math.random() * (b - a);
+const S = { ctrl: 'swipe', tiltMode: 'wheel', content: 'mix', comp: 90, invert: false, voice: true, animal: 'zebra', hills: 100, curves: 100, pull: 100 };
+try { Object.assign(S, JSON.parse(localStorage.getItem('zebraloppet3.v1') || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem('zebraloppet3.v1', JSON.stringify(S)); } catch (e) {} };

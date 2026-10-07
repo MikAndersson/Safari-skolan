@@ -14,6 +14,7 @@ Varje minispel utvecklas som ett eget spel tills vidare:
 
 - `zebraloppet/` – första prototypen: spring genom rätt port efter apans skylt. Källkod i `proto/zebralopp/`.
 - `zebraloppet2/` – välj djur (buffel, zebra, antilop, gasell), slingrande banor, hinder, ruschmätare och tre motståndare. Källkod i `proto/zebralopp2/parts/`, bygg med `node proto/zebralopp2/build.js`, testa med `python3 proto/zebralopp2/test/play.py`.
+- `zebraloppet3/` – vägskäl i stället för portar (rätt stig ger bananer och fartpilar, fel stig lera), riktiga backar och kurvor där draget växer med farten, gupp med lufttid och komisk fysik (kullerbyttor, blöt päls, flygande stockar). Reglage för backar och kurvor i pausmenyn. Källkod i `proto/zebralopp3/parts/`.
 
 ## Bygga och testa
 
